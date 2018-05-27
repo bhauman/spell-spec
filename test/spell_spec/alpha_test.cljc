@@ -1,10 +1,10 @@
-(ns spell-spec.core-test
+(ns spell-spec.alpha-test
   (:require [#?(:clj clojure.test :cljs cljs.test)
              :refer [deftest is testing]]
             [#?(:clj  clojure.spec.alpha
                 :cljs cljs.spec.alpha)
              :as s]
-            [spell-spec.core :as spell :refer [warn-keys strict-keys warn-strict-keys]]))
+            [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]))
 
 (deftest check-misspell-test
   (let [spec (spell/keys :opt-un [::hello ::there])

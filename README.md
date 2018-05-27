@@ -10,19 +10,19 @@ Example Specs and output:
 
 ```clojure
 (explain 
-  (spell-spec.core/keys :opt-un [::hello ::there]) 
+  (spell-spec.alpha/keys :opt-un [::hello ::there]) 
   {:there 1 :helloo 1})
 ;; In: [:helloo 0] val: :helloo fails at: [0] predicate: (not-misspelled #{:hello :there})
-;; 	 :expound.spec.problem/type  :spell-spec.core/misspelled-key
-;; 	 :spell-spec.core/misspelled-key  :helloo
-;; 	 :spell-spec.core/likely-misspelling-of  :hello
+;; 	 :expound.spec.problem/type  :spell-spec.alpha/misspelled-key
+;; 	 :spell-spec.alpha/misspelled-key  :helloo
+;; 	 :spell-spec.alpha/likely-misspelling-of  :hello
 ```
 
 Designed to work well with [expound](https://github.com/bhb/expound):
 
 ```clojure
 (expound 
-  (spell-spec.core/keys :opt-un [::hello ::there]) 
+  (spell-spec.alpha/keys :opt-un [::hello ::there]) 
   {:there 1 :helloo 1})
 ;; -- Misspelled map key -------------
 ;;
@@ -41,29 +41,29 @@ Maps remain open for keys that aren't similar to the specifed keys.
 
 ```clojure
 (s/valid? 
-  (spell-spec.core/keys :opt-un [::hello ::there]) 
+  (spell-spec.alpha/keys :opt-un [::hello ::there]) 
   {:there 1 :hello 1 :barbara 1})
 => true
 ```
 
 Also provides warnings instead of spec failures by binding
-`spell-spec.core/*warn-only*` to `true`
+`spell-spec.alpha/*warn-only*` to `true`
 
 ```clojure
-(binding [spell-spec.core/*warn-only* true]
+(binding [spell-spec.alpha/*warn-only* true]
   (s/valid? 
-    (spell-spec.core/keys :opt-un [::hello ::there]) 
+    (spell-spec.alpha/keys :opt-un [::hello ::there]) 
     {:there 1 :helloo 1}))
 ;; << printed to *err* >>
 ;; SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1}
 => true
 ```
 
-or calling `spell-spec.core/warn-keys`
+or calling `spell-spec.alpha/warn-keys`
 
 ```clojure
 (s/valid?
-  (spell-spec.core/warn-keys :opt-un [::hello ::there]) 
+  (spell-spec.alpha/warn-keys :opt-un [::hello ::there]) 
   {:there 1 :helloo 1})
 ;; << printed to *err* >>
 ;; SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1}
@@ -90,7 +90,7 @@ For *clojure cli tools* in your `deps.edn` `:deps` key add:
         expound {:mvn/version "0.6.1"}}}
 ```
 
-## `spell-spec.core/keys`
+## `spell-spec.alpha/keys`
 
 `keys` is the likely that macro that you will use the
 most when using `spell-spec`.
@@ -103,7 +103,6 @@ specified keys.
 
 An important aspect of this behavior is that the map is left open to
 other keys that are not close misspellings of the specified keys.
-
 
 
 

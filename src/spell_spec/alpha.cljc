@@ -1,10 +1,10 @@
-(ns spell-spec.core
+(ns spell-spec.alpha
   (:refer-clojure :exclude [keys])
   (:require
    [#?(:clj clojure.spec.alpha
        :cljs cljs.spec.alpha)
     :as s])
-  #?(:cljs (:require-macros [spell-spec.core :refer [keys warn-keys strict-keys warn-strict-keys]])))
+  #?(:cljs (:require-macros [spell-spec.alpha :refer [keys warn-keys strict-keys warn-strict-keys]])))
 
 (def ^:dynamic *value* {})
 
@@ -189,16 +189,16 @@
    (defmacro keys
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it fails on keys that are likely misspelled.
-  
+
   This spec will also provide an explanation for each misspelled key."
      [& args]
      ;; macroexpanding here to check args before using them later
      (let [form (macroexpand `(~(spec-ns-var 'keys) ~@args))
            known-keys (get-known-keys args)]
-       `(spell-spec.core/fuzzy-mapkeys-impl
+       `(spell-spec.alpha/fuzzy-mapkeys-impl
          ~known-keys
          ~form
-         (~(spec-ns-var 'map-of) (spell-spec.core/not-misspelled ~known-keys) any?)))))
+         (~(spec-ns-var 'map-of) (spell-spec.alpha/not-misspelled ~known-keys) any?)))))
 
 (defn warn-only-impl [spec]
   (reify
@@ -222,7 +222,7 @@
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it WARNs on keys that are likely misspelled."
      [& args]
-     `(spell-spec.core/warn-only-impl (spell-spec.core/keys ~@args))))
+     `(spell-spec.alpha/warn-only-impl (spell-spec.alpha/keys ~@args))))
 
 ;; ----------------------------------------------------------------------
 ;; Strict keys
@@ -234,7 +234,7 @@
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it fails on keys that are not present in
   the spec.
-  
+
   This betrays a very important and helpful idiom in Clojure of
   allowing maps to be open you should only use this when you are
   absolutely certain that the set of possible keys is closed.
@@ -242,13 +242,13 @@
   I highly recommend that you use `keys` instead of
   `strict-keys` as it still catches a majority of errors while
   allowing other keys to pass through.
-  
+
   This spec will provide explanation data for each unknown key."
      [& args]
      ;; macroexpanding here to check args before using them later
      (let [form (macroexpand `(~(spec-ns-var 'keys) ~@args))
-           known-keys (spell-spec.core/get-known-keys args)]
-       `(spell-spec.core/fuzzy-mapkeys-impl
+           known-keys (spell-spec.alpha/get-known-keys args)]
+       `(spell-spec.alpha/fuzzy-mapkeys-impl
          ~known-keys
          ~form
          (~(spec-ns-var 'map-of)
@@ -259,7 +259,7 @@
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it WARNs on keys that are not present in
   the spec.
-  
+
   This betrays a very important and helpful idiom in Clojure of
   allowing maps to be open you should only use this when you are
   absolutely certain that the set of possible keys is closed.
@@ -268,4 +268,4 @@
   `warn-on-unknown-keys` as it still catches a majority of errors while
   allowing other keys to pass through."
      [& args]
-     `(spell-spec.core/warn-only-impl (spell-spec.core/strict-keys ~@args))))
+     `(spell-spec.alpha/warn-only-impl (spell-spec.alpha/strict-keys ~@args))))

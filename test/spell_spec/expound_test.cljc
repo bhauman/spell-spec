@@ -4,7 +4,7 @@
             [#?(:clj clojure.spec.alpha
                 :cljs cljs.spec.alpha)
              :as s]
-            [spell-spec.core :as spell :refer [warn-keys strict-keys warn-strict-keys]]
+            [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]
             [expound.alpha :as exp]
             [expound.ansi :as ansi]
             [spell-spec.expound]))
