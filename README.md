@@ -119,9 +119,9 @@ For *clojure cli tools* in your `deps.edn` `:deps` key add:
         expound {:mvn/version "0.6.1"}}}
 ```
 
-## `spell-spec.alpha/keys`
+### `spell-spec.alpha/keys`
 
-`keys` islikely the macro that you will use most often when using
+`keys` is likely the macro that you will use most often when using
 `spell-spec`.
 
 Use `spell-spec.alpha/keys` the same way that you would use
@@ -152,10 +152,10 @@ An example of using:
 
 (s/def ::config (spell/keys :opt-un [::name ::use-history]))
 
-(s/valid? ::config {:name "John" :use-hisory false})
+(s/valid? ::config {:name "John" :use-hisory false :countr 1})
 ;; => false
 
-(s/explain ::config {:name "John" :use-hisory false})
+(s/explain ::config {:name "John" :use-hisory false :countr 1})
 ;; In: [:use-hisory 0] val: :use-hisory fails at: [0] predicate: (not-misspelled #{:name :use-history})
 ;; 	 :expound.spec.problem/type  :spell-spec.alpha/misspelled-key
 ;; 	 :spell-spec.alpha/misspelled-key  :use-hisory
@@ -167,10 +167,10 @@ An example of using:
 ;; and then the optional spell-spec expound helpers
 (require 'spell-spec.expound)
 
-(expound ::config {:name "John" :use-hisory false})
+(expound ::config {:name "John" :use-hisory false :countr 1})
 ;; -- Misspelled map key -------------
 ;;
-;;   {:name ..., :use-hisory ...}
+;;   {:name ..., :use-hisory ..., :counter ...}
 ;;               ^^^^^^^^^^^
 ;;
 ;; should be spelled
@@ -180,6 +180,62 @@ An example of using:
 ;; -------------------------
 ;; Detected 1 error
 ```
+
+### `spell-spec.alpha/strict-keys`
+
+`strict-keys` is very similar to `spell-spec.alpha/keys` except that
+the map is closed to keys that are not specified.
+
+`strict-keys` will produce two types of validation problems: one for
+*misspelled keys* and one for *unknown keys*.
+
+> I really debated about whether I should add `strict-keys` to the
+> library as it violates the Clojure idiom of keeping maps
+> open. However, there are some situations where this behavior is
+> warranted. I stronly advocate for the use of `spell-spec.alpha/keys`
+> over `strict-keys`. Don't say I didn't warn you.
+
+Example (continuation of the example session above):
+
+```
+(s/def ::strict-config (spell/strict-keys :opt-un [::name ::use-history]))
+
+(s/valid? ::strict-config {:name "John" :use-hisory false :countr 1})
+;; => false
+
+(s/explain ::strict-config {:name "John" :use-hisory false :countr 1})
+;; In: [:use-hisory 0] val: :use-hisory fails at: [0] predicate: #{:name :use-history}
+;;   :expound.spec.problem/type  :spell-spec.alpha/misspelled-key
+;; 	 :spell-spec.alpha/misspelled-key  :use-hisory
+;; 	 :spell-spec.alpha/likely-misspelling-of  :use-history
+;; In: [:countr 0] val: :countr fails at: [0] predicate: #{:name :use-history}
+;; 	 :expound.spec.problem/type  :spell-spec.alpha/unknown-key
+;;	 :spell-spec.alpha/unknown-key  :countr
+
+(s/expound ::strict-config {:name "John" :use-hisory false :countr 1})
+;; -- Misspelled map key -------------
+;;
+;;   {:name ..., :countr ..., :use-hisory ...}
+;;                            ^^^^^^^^^^^
+;;
+;; should be spelled
+;;
+;;   :use-history
+;;
+;; -- Unknown map key ----------------
+;;
+;;   {:name ..., :use-hisory ..., :countr ...}
+;;                                ^^^^^^^
+;;
+;; should be one of
+;;
+;;   :name, :use-history
+;;
+;; -------------------------
+;; Detected 2 errors
+```
+
+
 
 ## License
 
