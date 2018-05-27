@@ -1,8 +1,8 @@
 # spell-spec
 
 Provides additional spec macros that have the same signature as
-`clojure.spec.alpha/keys` which check for potential spelling errors in
-the map keys. `spell-spec` provides
+`clojure.spec.alpha/keys` which also check for potential spelling
+errors in the map keys. `spell-spec` provides
 [expound](https://github.com/bhb/expound) integration for nicely
 formatted results.
 
@@ -37,7 +37,7 @@ Designed to work well with [expound](https://github.com/bhb/expound):
 ;; Detected 1 error
 ```
 
-Maps remain open for keys that aren't similar to the specifed keys.
+Maps remain open for keys that aren't similar to the specified keys.
 
 ```clojure
 (s/valid? 
@@ -73,9 +73,9 @@ or calling `spell-spec.alpha/warn-keys`
 ## Why?
 
 In certain situations there is a need to provide user feedback for
-misstyped map keys. This is true for tool configuration and possibly
+miss-typed map keys. This is true for tool configuration and possibly
 any external API where users are repeatedly stung my single character
-misshaps. `spell-spec` can provide valuable feedback for these
+mishaps. `spell-spec` can provide valuable feedback for these
 situations.
 
 The behavior in the library is an evolution of the library
