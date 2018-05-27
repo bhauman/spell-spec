@@ -73,9 +73,9 @@ or calling `spell-spec.alpha/warn-keys`
 ## Why?
 
 In certain situations there is a need to provide user feedback for
-misstyping map keys. This is true for tool configuration and possibly
+misstyped map keys. This is true for tool configuration and possibly
 any external API where users are repeatedly stung my single character
-misshaps. This library can provide in-valuable feedback for these
+misshaps. `spell-spec` can provide valuable feedback for these
 situations.
 
 The behavior in the library is an evolution of the library
@@ -121,19 +121,65 @@ For *clojure cli tools* in your `deps.edn` `:deps` key add:
 
 ## `spell-spec.alpha/keys`
 
-`keys` is the likely that macro that you will use the
-most when using `spell-spec`.
+`keys` islikely the macro that you will use most often when using
+`spell-spec`.
 
-`keys` is a spec macro that has the same signature and behavior as
-`clojure.spec.alpha/keys`. In addition to performing the same checks
-that `clojure.spec.alpha/keys` does, it checks to see if there are
-unknown keys present which are also close misspellings of the
-specified keys.
+Use `spell-spec.alpha/keys` the same way that you would use
+`clojure.spec.alpha/keys` keeping in mind that the spec it creates
+will fail for keys that are misspelled.
+
+`spell-spec.alpha/keys` is a spec macro that has the same signature
+and behavior as `clojure.spec.alpha/keys`. In addition to performing
+the same checks that `clojure.spec.alpha/keys` does, it checks to see
+if there are unknown keys present which are also close misspellings of
+the specified keys.
 
 An important aspect of this behavior is that the map is left open to
-other keys that are not close misspellings of the specified keys.
+other keys that are not close misspellings of the specified
+keys. Keeping maps open is an important pattern in Clojure which
+allows one to simply add behavior to a program by adding extra data to
+maps that flow through functions. `spell-spec.alpha/keys` keeps this
+in mind and is fairly conservative in its spelling checks.
 
+An example of using:
 
+```clojure
+(require '[clojure.spec.alpha :as s])
+(require '[spell-spec.alpha :as spell])
+
+(s/def ::name string?)
+(s/def ::use-history boolean?)
+
+(s/def ::config (spell/keys :opt-un [::name ::use-history]))
+
+(s/valid? ::config {:name "John" :use-hisory false})
+;; => false
+
+(s/explain ::config {:name "John" :use-hisory false})
+;; In: [:use-hisory 0] val: :use-hisory fails at: [0] predicate: (not-misspelled #{:name :use-history})
+;; 	 :expound.spec.problem/type  :spell-spec.alpha/misspelled-key
+;; 	 :spell-spec.alpha/misspelled-key  :use-hisory
+;; 	 :spell-spec.alpha/likely-misspelling-of  :use-history
+
+;; to use with expound must first require expound
+(require '[expound.alpha :refer [expound]])
+
+;; and then the optional spell-spec expound helpers
+(require 'spell-spec.expound)
+
+(expound ::config {:name "John" :use-hisory false})
+;; -- Misspelled map key -------------
+;;
+;;   {:name ..., :use-hisory ...}
+;;               ^^^^^^^^^^^
+;;
+;; should be spelled
+;;
+;;   :use-history
+;;
+;; -------------------------
+;; Detected 1 error
+```
 
 ## License
 
