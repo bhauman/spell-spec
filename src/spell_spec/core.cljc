@@ -1,9 +1,10 @@
 (ns spell-spec.core
+  (:refer-clojure :exclude [keys])
   (:require
    [#?(:clj clojure.spec.alpha
        :cljs cljs.spec.alpha)
     :as s])
-  #?(:cljs (:require-macros [spell-spec.core :refer [check-misspelled-keys warn-on-misspelled-keys strict-keys warn-on-unknown-keys]])))
+  #?(:cljs (:require-macros [spell-spec.core :refer [keys warn-keys strict-keys warn-strict-keys]])))
 
 (def ^:dynamic *value* {})
 
@@ -68,7 +69,9 @@
     (and (not (known-keys key))
          (->> known-keys
               (filter #(similar-key % key))
-              (remove (set (keys *value*)))
+              (remove (set (#?(:clj clojure.core/keys
+                               :cljs cljs.core/keys)
+                            *value*)))
               not-empty))))
 
 (defn not-misspelled [known-keys] (complement (likely-misspelled known-keys)))
@@ -183,7 +186,7 @@
           "keys")
 
 #?(:clj
-   (defmacro check-misspelled-keys
+   (defmacro keys
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it fails on keys that are likely misspelled.
   
@@ -215,11 +218,11 @@
     (describe* [_] (s/describe* spec))))
 
 #?(:clj
-   (defmacro warn-on-misspelled-keys
+   (defmacro warn-keys
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it WARNs on keys that are likely misspelled."
      [& args]
-     `(spell-spec.core/warn-only-impl (spell-spec.core/check-misspelled-keys ~@args))))
+     `(spell-spec.core/warn-only-impl (spell-spec.core/keys ~@args))))
 
 ;; ----------------------------------------------------------------------
 ;; Strict keys
@@ -236,7 +239,7 @@
   allowing maps to be open you should only use this when you are
   absolutely certain that the set of possible keys is closed.
 
-  I highly recommend that you use `check-misspelled-keys` instead of
+  I highly recommend that you use `keys` instead of
   `strict-keys` as it still catches a majority of errors while
   allowing other keys to pass through.
   
@@ -252,7 +255,7 @@
           ~known-keys any?)))))
 
 #?(:clj
-   (defmacro warn-on-unknown-keys
+   (defmacro warn-strict-keys
      "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
   The main difference is that it WARNs on keys that are not present in
   the spec.

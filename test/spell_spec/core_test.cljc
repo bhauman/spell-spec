@@ -4,29 +4,29 @@
             [#?(:clj  clojure.spec.alpha
                 :cljs cljs.spec.alpha)
              :as s]
-            [spell-spec.core :as sspc :refer [check-misspelled-keys warn-on-misspelled-keys strict-keys warn-on-unknown-keys]]))
+            [spell-spec.core :as spell :refer [warn-keys strict-keys warn-strict-keys]]))
 
 (deftest check-misspell-test
-  (let [spec (check-misspelled-keys :opt-un [::hello ::there])
+  (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :barabara 1}
         {:keys [::s/problems]}
         (s/explain-data spec data)]
     (is (not (s/valid? spec data)))
     (is (= 1 (count problems)))
-    (when-let [{:keys [:expound.spec.problem/type ::sspc/misspelled-key ::sspc/likely-misspelling-of]} (first problems)]
-      (is (= ::sspc/misspelled-key type))
+    (when-let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]} (first problems)]
+      (is (= ::spell/misspelled-key type))
       (is (= misspelled-key :helloo))
       (is (= likely-misspelling-of :hello)))))
 
 (deftest check-misspell-with-namespace-test
-  (let [spec (check-misspelled-keys :opt [::hello ::there])
+  (let [spec (spell/keys :opt [::hello ::there])
         data {::there 1 ::helloo 1 :barabara 1}
         {:keys [::s/problems]}
         (s/explain-data spec data)]
     (is (not (s/valid? spec data)))
     (is (= 1 (count problems)))
-    (when-let [{:keys [:expound.spec.problem/type ::sspc/misspelled-key ::sspc/likely-misspelling-of]} (first problems)]
-      (is (= ::sspc/misspelled-key type))
+    (when-let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]} (first problems)]
+      (is (= ::spell/misspelled-key type))
       (is (= misspelled-key ::helloo))
       (is (= likely-misspelling-of ::hello)))))
 
@@ -34,17 +34,17 @@
 (s/def ::there integer?)
 
 (deftest other-errors-come-first
-  (let [spec (check-misspelled-keys :opt-un [::hello ::there])
+  (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there "1" :helloo 1 :barabara 1}
         {:keys [::s/problems]} (s/explain-data spec data)]
     (is (not (s/valid? spec data)))
     (is (= 2 (count problems)))
     (when (= 2 (count problems))
       (is (= (-> problems first :val) "1"))
-      (is (= (-> problems second ::sspc/misspelled-key) :helloo)))))
+      (is (= (-> problems second ::spell/misspelled-key) :helloo)))))
 
 (deftest warning-is-valid-test
-  (let [spec (warn-on-misspelled-keys :opt-un [::hello ::there])
+  (let [spec (warn-keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :barabara 1}]
     (is (s/valid? spec data))
     (is (nil? (s/explain-data spec data)))
@@ -61,7 +61,7 @@
         (is (= "1" (-> problems first :val)))))))
 
 (deftest dont-recommend-keys-if-key-already-present-in-value
-  (let [spec (check-misspelled-keys :opt-un [::hello ::there])
+  (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :hello 1 :barabara 1}]
     (is (s/valid? spec data))
     (is (nil? (s/explain-data spec data)))
@@ -77,8 +77,8 @@
         (s/explain-data spec data)]
     (is (not (s/valid? spec data)))
     (is (= 1 (count problems)))
-    (when-let [{:keys [:expound.spec.problem/type ::sspc/unknown-key]} (first problems)]
-      (is (= ::sspc/unknown-key type))
+    (when-let [{:keys [:expound.spec.problem/type ::spell/unknown-key]} (first problems)]
+      (is (= ::spell/unknown-key type))
       (is (= unknown-key :barabara)))))
 
 (deftest strict-keys-misspelled-test
@@ -89,16 +89,16 @@
           (s/explain-data spec data)]
       (is (not (s/valid? spec data)))
       (is (= 2 (count problems)))
-      (when-let [{:keys [:expound.spec.problem/type ::sspc/misspelled-key ::sspc/likely-misspelling-of]} (first problems)]
-        (is (= ::sspc/misspelled-key type))
+      (when-let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]} (first problems)]
+        (is (= ::spell/misspelled-key type))
         (is (= misspelled-key :helloo))
         (is (= likely-misspelling-of :hello)))
-      (when-let [{:keys [:expound.spec.problem/type ::sspc/unknown-key]} (second problems)]
-        (is (= ::sspc/unknown-key type))
+      (when-let [{:keys [:expound.spec.problem/type ::spell/unknown-key]} (second problems)]
+        (is (= ::spell/unknown-key type))
         (is (= unknown-key :barabara))))))
 
 (deftest warn-on-unknown-keys-test
-  (let [spec (warn-on-unknown-keys :opt-un [::hello ::there])
+  (let [spec (warn-strict-keys :opt-un [::hello ::there])
         data {:there 1 :barabara 1}
         {:keys [::s/problems]}
         (s/explain-data spec data)]
