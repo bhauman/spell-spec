@@ -35,8 +35,7 @@ Designed to work well with expound:
 ;; Detected 1 error
 ```
 
-Only fails if there is a similar enough key to warrant failure so maps
-remain open for keys that aren't similar to the specifed keys.
+Maps remain open for keys that aren't similar to the specifed keys.
 
 ```clojure
 (s/valid? 
@@ -45,7 +44,35 @@ remain open for keys that aren't similar to the specifed keys.
 => true
 ```
 
+Also provides warnings instead of spec failures by binding
+`spell-spec.core/*warn-only*` to `true`
+
+```clojure
+(binding [spell-spec.core/*warn-only* true]
+  (s/valid? 
+    (spell-spec.core/check-misspelled-keys :opt-un [::hello ::there]) 
+    {:there 1 :helloo 1}))
+;; << printed to *err* >>
+;; SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1}
+=> true
+```
+
+or calling `spell-spec.core/warn-on-misspelled-keys`
+
+```clojure
+(binding [spell-spec.core/*warn-only* true]
+  (s/valid? 
+    (spell-spec.core/warn-on-misspelled-keys :opt-un [::hello ::there]) 
+    {:there 1 :helloo 1}))
+;; << printed to *err* >>
+;; SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1}
+=> true
+```
+
 ## Usage
+
+
+
 
 ## License
 
