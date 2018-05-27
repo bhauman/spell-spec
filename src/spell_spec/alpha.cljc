@@ -10,13 +10,23 @@
 
 (def ^:dynamic *warn-only* false)
 
-(def ^:dynamic *length->threshold*)
-
 (def default-warning-handler #(some->> % ::warning-message
                                        (str "SPEC WARNING: ")
                                        println))
 
 (def ^:dynamic *warning-handler* default-warning-handler)
+
+;; this is a simple step function to determine the threshold
+;; no need to figure out the numeric function
+(defn length->threshold [len]
+  (condp #(<= %2 %1) len
+    4 0
+    5 1
+    6 2
+    11 3
+    20 4
+    (int (* 0.2 len))))
+(def ^:dynamic *length->threshold* length->threshold)
 
 ;; ----------------------------------------------------------------------
 ;; similar keywords
@@ -32,7 +42,7 @@
     [(inc (first previous))]
     (map vector previous (next previous) other-seq)))
 
-(defn levenshtein
+(defn- levenshtein
   "Compute the levenshtein distance between two [sequences]."
   [sequence1 sequence2]
   (peek
@@ -40,28 +50,15 @@
             (map #(identity %2) (cons nil sequence2) (range))
             sequence1)))
 
-;; this is a simple step function to determine the threshold
-;; no need to figure out the numeric function
-(defn length->threshold [len]
-  (condp #(<= %2 %1) len
-    4 0
-    5 1
-    6 2
-    11 3
-    20 4
-    (int (* 0.2 len))))
-
-(defn similar-key* [thresh ky ky2]
+(defn- similar-key* [thresh ky ky2]
   (let [dist (levenshtein (str ky) (str ky2))]
     (when (<= dist thresh)
       dist)))
 
-(defn similar-key [ky ky2]
+(defn- similar-key [ky ky2]
   (let [min-len (apply min (map (comp count #(if (.startsWith % ":") (subs % 1) %) str) [ky ky2]))]
-    (similar-key* (#?(:clj (if (bound? #'*length->threshold*)
-                             *length->threshold*
-                             length->threshold)
-                      :cljs  length->threshold)
+    (similar-key* (#?(:clj *length->threshold*
+                      :cljs length->threshold)
                    min-len) ky ky2)))
 
 (defn likely-misspelled [known-keys]
@@ -76,7 +73,7 @@
 
 (defn not-misspelled [known-keys] (complement (likely-misspelled known-keys)))
 
-(defn most-similar-to [key known-keys]
+(defn- most-similar-to [key known-keys]
   (->> ((likely-misspelled known-keys) key)
        (map (juxt #(levenshtein (str %) (str key)) identity))
        (filter first)
@@ -84,7 +81,7 @@
        first
        second))
 
-(defn enhance-spelling-problem [known-keys {:keys [val] :as prob}]
+(defn- enhance-spelling-problem [known-keys {:keys [val] :as prob}]
   (if-let [sim (most-similar-to val known-keys)]
     (assoc prob
            :expound.spec.problem/type ::misspelled-key
@@ -117,7 +114,7 @@
        (binding [*print-level* 1]
          (pr-str value))))
 
-(defn handle-warnings [known-keys x problems]
+(defn- handle-warnings [known-keys x problems]
   (#?@(:clj [binding [*out* *err*]]
        :cljs  [do])
     (doseq [prob (keep (partial enhance-spelling-problem known-keys) problems)]
@@ -183,15 +180,24 @@
       (name var-sym)))
    )
 
-#_(symbol "clojure.spec.alpha"
-          "keys")
-
 #?(:clj
    (defmacro keys
-     "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
-  The main difference is that it fails on keys that are likely misspelled.
+     "Use `spell-spec.alpha/keys` the same way that you would use
+  `clojure.spec.alpha/keys` keeping in mind that the spec it creates
+  will fail for keys that are misspelled.
 
-  This spec will also provide an explanation for each misspelled key."
+  `spell-spec.alpha/keys` is a spec macro that has the same signature and
+  behavior as clojure.spec.alpha/keys. In addition to performing the
+  same checks that `clojure.spec.alpha/keys` does, it checks to see if
+  there are unknown keys present which are also close misspellings of
+  the specified keys.
+
+  An important aspect of this behavior is that the map is left open to
+  other keys that are not close misspellings of the specified
+  keys. Keeping maps open is an important pattern in Clojure which
+  allows one to simply add behavior to a program by adding extra data
+  to maps that flow through functions. spell-spec.alpha/keys keeps
+  this in mind and is fairly conservative in its spelling checks."
      [& args]
      ;; macroexpanding here to check args before using them later
      (let [form (macroexpand `(~(spec-ns-var 'keys) ~@args))
@@ -220,8 +226,8 @@
 
 #?(:clj
    (defmacro warn-keys
-     "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
-  The main difference is that it WARNs on keys that are likely misspelled."
+     "This macro is the same as `spell-spec.alpha/keys` macro except
+  it will print warnings instead of failing when misspelled keys are discovered."
      [& args]
      `(spell-spec.alpha/warn-only-impl (spell-spec.alpha/keys ~@args))))
 
@@ -232,19 +238,16 @@
 
 #?(:clj
    (defmacro strict-keys
-     "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
-  The main difference is that it fails on keys that are not present in
-  the spec.
+     "`strict-keys` is very similar to `spell-spec.alpha/keys` except
+  that the map is closed to keys that are not specified.
 
-  This betrays a very important and helpful idiom in Clojure of
-  allowing maps to be open you should only use this when you are
-  absolutely certain that the set of possible keys is closed.
+  `strict-keys` will produce two types of validation problems: one for
+  misspelled keys and one for unknown keys.
 
-  I highly recommend that you use `keys` instead of
-  `strict-keys` as it still catches a majority of errors while
-  allowing other keys to pass through.
-
-  This spec will provide explanation data for each unknown key."
+  This spec macro violates the Clojure idiom of keeping maps open. However,
+  there are some situations where this behavior is warranted. I
+  strongly advocate for the use of `spell-spec.alpha/keys` over
+  `strict-keys`"
      [& args]
      ;; macroexpanding here to check args before using them later
      (let [form (macroexpand `(~(spec-ns-var 'keys) ~@args))
@@ -257,16 +260,8 @@
 
 #?(:clj
    (defmacro warn-strict-keys
-     "This is a spec that has the same signature as the clojure.spec.alpha/keys spec.
-  The main difference is that it WARNs on keys that are not present in
-  the spec.
-
-  This betrays a very important and helpful idiom in Clojure of
-  allowing maps to be open you should only use this when you are
-  absolutely certain that the set of possible keys is closed.
-
-  I highly recommend that you use `warn-on-misspelled-keys` instead of
-  `warn-on-unknown-keys` as it still catches a majority of errors while
-  allowing other keys to pass through."
+     "This macro is similar to `spell-spec.alpha/strict-keys` macro
+  except that it will print warnings for unknown and misspelled keys
+  instead of failing."
      [& args]
      `(spell-spec.alpha/warn-only-impl (spell-spec.alpha/strict-keys ~@args))))

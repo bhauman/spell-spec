@@ -74,7 +74,7 @@ or calling `spell-spec.alpha/warn-keys`
 
 In certain situations there is a need to provide user feedback for
 miss-typed map keys. This is true for tool configuration and possibly
-any external API where users are repeatedly stung my single character
+any external API where users are repeatedly stung by single character
 mishaps. `spell-spec` can provide valuable feedback for these
 situations.
 
@@ -86,9 +86,10 @@ which I wrote to validate the complex configuration of
 When I originally wrote
 [strictly-specking](https://github.com/bhauman/strictly-specking), I
 really wanted to push the limits of what could be done to provide
-feedback for configuration errors. As a result the code in is very
-complex and tailored to the problem domain of configuration
-specification for a tool like [figwheel](https://github.com/bhauman/lein-figwheel).
+feedback for configuration errors. As a result the code in
+`strictly-specking` is very complex and tailored to the problem domain
+of configuration specification for a tool like
+[figwheel](https://github.com/bhauman/lein-figwheel).
 
 `spell-spec` is a *good enough* approach which will provide good
 feedback for a much broader set of use cases. I am planning on using
