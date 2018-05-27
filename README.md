@@ -70,6 +70,35 @@ or calling `spell-spec.alpha/warn-keys`
 => true
 ```
 
+## Why?
+
+In certain situations there is a need to provide user feedback for
+misstyping map keys. This is true for tool configuration and possibly
+any external API where users are repeatedly stung my single character
+misshaps. This library can provide in-valuable feedback for these
+situations.
+
+The behavior in the library is an evolution of the library
+[strictly-specking](https://github.com/bhauman/strictly-specking),
+which I wrote to validate the complex configuration of
+[figwheel](https://github.com/bhauman/lein-figwheel).
+
+When I originally wrote
+[strictly-specking](https://github.com/bhauman/strictly-specking), I
+really wanted to push the limits of what could be done to provide
+feedback for configuration errors. As a result the code in is very
+complex and tailored to the problem domain of configuration
+specification for a tool like [figwheel](https://github.com/bhauman/lein-figwheel).
+
+`spell-spec` is a *good enough* approach which will provide good
+feedback for a much broader set of use cases. I am planning on using
+this approach instead of
+[strictly-specking](https://github.com/bhauman/strictly-specking) from
+now on.
+
+`spell-spec` is much much lighter as it has no dependencies other than
+of `clojure.spec` itself.
+
 ## Usage
 
 Add `spell-spec` as a dependency in your project config.
