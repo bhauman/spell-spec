@@ -60,16 +60,16 @@ Also provides warnings instead of spec failures by binding
 or calling `spell-spec.core/warn-on-misspelled-keys`
 
 ```clojure
-(binding [spell-spec.core/*warn-only* true]
-  (s/valid? 
-    (spell-spec.core/warn-on-misspelled-keys :opt-un [::hello ::there]) 
-    {:there 1 :helloo 1}))
+(s/valid?
+  (spell-spec.core/warn-on-misspelled-keys :opt-un [::hello ::there]) 
+  {:there 1 :helloo 1})
 ;; << printed to *err* >>
 ;; SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1}
 => true
 ```
 
 ## Usage
+
 
 
 
