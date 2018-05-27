@@ -91,7 +91,7 @@ feedback for configuration errors. As a result the code in
 of configuration specification for a tool like
 [figwheel](https://github.com/bhauman/lein-figwheel).
 
-`spell-spec` is a *good enough* approach which will provide good
+`spell-spec` is a **good enough** approach which will provide good
 feedback for a much broader set of use cases. I am planning on using
 this approach instead of
 [strictly-specking](https://github.com/bhauman/strictly-specking) from
@@ -104,7 +104,7 @@ of `clojure.spec` itself.
 
 Add `spell-spec` as a dependency in your project config.
 
-For *leiningen* in your `project.clj` `:dependencies` add:
+For **leiningen** in your `project.clj` `:dependencies` add:
 
 ```clojure
 :dependencies [[spell-spec "0.1.0"]
@@ -112,7 +112,7 @@ For *leiningen* in your `project.clj` `:dependencies` add:
                [expound "0.6.1"]]
 ```
 
-For *clojure cli tools* in your `deps.edn` `:deps` key add:
+For **clojure cli tools** in your `deps.edn` `:deps` key add:
 
 ```clojure
 {:deps {spell-spec {:mvn/version "0.1.0"}
@@ -199,7 +199,7 @@ An example of using:
 the map is closed to keys that are not specified.
 
 `strict-keys` will produce two types of validation problems: one for
-*misspelled keys* and one for *unknown keys*.
+**misspelled keys** and one for **unknown keys**.
 
 > I really debated about whether I should add `strict-keys` to the
 > library as it violates the Clojure idiom of keeping maps
@@ -274,7 +274,7 @@ Example (continuing):
 ```clojure
 (s/def ::warn-config (spell/warn-strict-keys :opt-un [::name ::use-history]))
 
-(binding [spell/*warning-handler clojure.pprint/pprint]
+(binding [spell/*warning-handler* clojure.pprint/pprint]
   (s/valid? ::warn-config {:name "John" :use-hisory false :countr 1}))
 ;; << prints out >>
 ;; {:path [0],
@@ -301,7 +301,7 @@ Example (continuing):
 ;; => true
 ```
 
-## Controlling the misspelling threshold
+## Changing the threshold that detects misspelling 
 
 A misspelling is detected when an unknown map key is within a certain
 `levenshtein` distance from a specified map key. If the size of this
