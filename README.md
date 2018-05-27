@@ -119,6 +119,17 @@ For *clojure cli tools* in your `deps.edn` `:deps` key add:
         expound {:mvn/version "0.6.1"}}}
 ```
 
+## Using with Expound
+
+`spell-spec` does not declare `expound` as a dependency and does not
+automatically register its expound helpers.
+
+If you want to use the `spell-spec`
+[expound](https://github.com/bhb/expound) integration, then after
+`expound` has been required you will need to require
+`spell-spec.expound` to register the expound helpers. You will want to
+do this before you validate any `spell-spec` defined specs.
+
 ### `spell-spec.alpha/keys`
 
 `keys` is likely the macro that you will use most often when using
