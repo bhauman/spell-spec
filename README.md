@@ -192,12 +192,12 @@ the map is closed to keys that are not specified.
 > I really debated about whether I should add `strict-keys` to the
 > library as it violates the Clojure idiom of keeping maps
 > open. However, there are some situations where this behavior is
-> warranted. I stronly advocate for the use of `spell-spec.alpha/keys`
-> over `strict-keys`. Don't say I didn't warn you.
+> warranted. I strongly advocate for the use of `spell-spec.alpha/keys`
+> over `strict-keys`  ... don't say I didn't warn you.
 
 Example (continuation of the example session above):
 
-```
+```clojure
 (s/def ::strict-config (spell/strict-keys :opt-un [::name ::use-history]))
 
 (s/valid? ::strict-config {:name "John" :use-hisory false :countr 1})
