@@ -14,9 +14,14 @@
         data {:there 1 :helloo 1 :barabara 1}
         result
         (exp/expound-str spec data)]
+    
     (is (.contains result "Misspelled map key"))
     (is (.contains result "should be spelled"))
-    (is (.contains result " :hello\n"))))
+    (is (.contains result " :hello\n"))
+
+    )
+
+  )
 
 (deftest check-misspell-with-namespace-test
   (let [spec (spell/keys :opt [::hello ::there])
@@ -79,16 +84,3 @@
     (exp/expound (strict-keys :opt-un [::hello ::there])
                  {:there 1 :barabara 1}))
 
-#_(s/explain (spell-spec.core/check-misspelled-keys :opt-un [::hello ::there]) 
-           {:there 1 :helloo 1})
-
-#_(s/valid? (spell-spec.core/warn-on-misspelled-keys :opt-un [::hello ::there]) 
-           {:there 1 :helloo 1})
-
-#_(exp/expound (spell-spec.core/warn-on-misspelled-keys :opt-un [::hello ::there]) 
-             {:there 1 :helloo 1})
-
-;; In: [:helloo 0] val: :helloo fails at: [0] predicate: (not-misspelled #{:hello :there})
-;; 	 :expound.spec.problem/type  :spell-spec.core/misspelled-key
-;; 	 :spell-spec.core/misspelled-key  :helloo
-;; 	 :spell-spec.core/likely-misspelling-of  :hello

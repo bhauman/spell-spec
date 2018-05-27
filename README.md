@@ -96,7 +96,7 @@ this approach instead of
 [strictly-specking](https://github.com/bhauman/strictly-specking) from
 now on.
 
-`spell-spec` is much much lighter as it has no dependencies other than
+`spell-spec` is much lighter as it has no dependencies other than
 of `clojure.spec` itself.
 
 ## Usage
@@ -235,7 +235,97 @@ Example (continuation of the example session above):
 ;; Detected 2 errors
 ```
 
+## Warnings only
 
+One way to keep maps completely open is to simply warn when keys are
+misspelled or unknown, helpful feedback is still provided but the spec
+doesn't fail when these anomalies are detected.
+
+Specs defined by `spell-spec.alpha/keys` and `spell-spec.alpha/strict-keys`
+will issue warnings instead of failing when one binds
+`spell-spec.alpha/*warn-only*` to `true` around the calls that verify
+the specs.
+
+One can also use the following substitutions to get warnings instead of failures:
+
+* use `spell-spec.alpha/warn-keys` for `spell-spec.alpha/keys`
+* use `spell-spec.alpha/warn-strict-keys` for `spell-spec.alpha/strict-keys`
+
+## Handling warnings
+
+By default warnings are printed to `clojure.core/*err*`. One can
+control how `spell-spec` warnings are reported by binding
+`spell-spec.alpha/*warning-handler*` to a function of one argument.
+
+Example (continuing):
+
+```clojure
+(s/def ::warn-config (spell/warn-strict-keys :opt-un [::name ::use-history]))
+
+(binding [spell/*warning-handler clojure.pprint/pprint]
+  (s/valid? ::warn-config {:name "John" :use-hisory false :countr 1}))
+;; << prints out >>
+;; {:path [0],
+;;  :pred #{:name :use-history},
+;;  :val :use-hisory,
+;;  :via [],
+;;  :in [:use-hisory 0],
+;;  :expound.spec.problem/type :spell-spec.alpha/misspelled-key,
+;;  :spell-spec.alpha/misspelled-key :use-hisory,
+;;  :spell-spec.alpha/likely-misspelling-of :use-history,
+;;  :spell-spec.alpha/warning-message
+;;  "possible misspelled map key :use-hisory should probably be :use-history in {:name \"John\", :use-hisory false, :countr 1}"
+;;  :spell-spec.alpha/value {:name "John", :use-hisory false, :countr 1}}
+;; {:path [0],
+;;  :pred #{:name :use-history},
+;;  :val :countr,
+;;  :via [],
+;;  :in [:countr 0],
+;;  :expound.spec.problem/type :spell-spec.alpha/unknown-key,
+;;  :spell-spec.alpha/unknown-key :countr,
+;;  :spell-spec.alpha/warning-message
+;;  "unknown map key :countr in {:name \"John\", :use-hisory false, :countr 1}"
+;;  :spell-spec.alpha/value {:name "John", :use-hisory false, :countr 1}}
+;; => true
+```
+
+## Controlling the misspelling threshold
+
+A misspelling is detected when an unknown map key is within a certain
+`levenshtein` distance from a specified map key. If the size of this
+distance is too big then the number of false positives goes up.
+
+You can override the default behavior by binding the
+`spell-spec.alpha/*length->threshold*` to a function that takes one
+argument, the length of the shortest keyword (of two compared
+keywords) and returns an integer which is the threshold for the
+levenshtein distance.
+
+Example (continuing):
+
+```clojure
+(s/def ::namer (spell/keys :opt-un [::name]))
+
+;; :namee one character off from :name an thus a detected misspelling
+;; with a threshold of 1
+(binding [spell/*length->threshold* (fn [_] 1)]
+  (s/valid? ::namer {:namee "John"}))
+;; => false
+
+;; :nameee is two characters off from :name an thus an un-detected misspelling
+;; with a threshold of 1
+(binding [spell/*length->threshold* (fn [_] 1)]
+  (s/valid? ::namer {:nameee "John"})) 
+;; => true
+
+;; with a threshold of 2 we can detect both of the above misspellings
+(binding [spell/*length->threshold* (fn [_] 2)]
+  (s/valid? ::namer {:namee "John"}))
+;; => false
+(binding [spell/*length->threshold* (fn [_] 2)]
+  (s/valid? ::namer {:nameee "John"})) 
+;; => false
+```
 
 ## License
 

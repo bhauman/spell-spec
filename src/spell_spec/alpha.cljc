@@ -13,8 +13,8 @@
 (def ^:dynamic *length->threshold*)
 
 (def default-warning-handler #(some->> % ::warning-message
-                                      (str "SPEC WARNING: ")
-                                      println))
+                                       (str "SPEC WARNING: ")
+                                       println))
 
 (def ^:dynamic *warning-handler* default-warning-handler)
 
@@ -123,6 +123,7 @@
     (doseq [prob (keep (partial enhance-spelling-problem known-keys) problems)]
       (*warning-handler*
        (assoc prob
+              ::value x
               ::warning-message
               (warning-message* prob x))))))
 
