@@ -14,21 +14,16 @@
         data {:there 1 :helloo 1 :barabara 1}
         result
         (exp/expound-str spec data)]
-    
     (is (.contains result "Misspelled map key"))
-    (is (.contains result "should be spelled"))
-    (is (.contains result " :hello\n"))
-
-    )
-
-  )
+    (is (.contains result "should probably be"))
+    (is (.contains result " :hello\n"))))
 
 (deftest check-misspell-with-namespace-test
   (let [spec (spell/keys :opt [::hello ::there])
         data {::there 1 ::helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
     (is (.contains result "Misspelled map key"))
-    (is (.contains result "should be spelled"))
+    (is (.contains result "should probably be"))
     (is (.contains result ":spell-spec.expound-test/hello\n"))))
 
 (s/def ::hello integer?)
@@ -39,7 +34,7 @@
         data {:there "1" :helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
     (is (.contains result "Misspelled map key"))
-    (is (.contains result "should be spelled"))
+    (is (.contains result "should probably be"))
     (is (.contains result " :hello\n"))
 
     (is (not (.contains result "Spec failed")))
@@ -71,6 +66,29 @@
         (exp/expound-str spec data)
         (is (= (str *err*)
                "SPEC WARNING: unknown map key :barabara in {:there 1, :barabara 1}\n"))))))
+
+(deftest multiple-spelling-matches
+  (let [spec (spell/keys :opt-un [::hello1 ::hello2 ::hello3 ::hello4 ::there])
+        data {:there 1 :helloo 1 :barabara 1}
+        result (exp/expound-str spec data)]
+    (is (.contains result "Misspelled map key"))
+    (is (.contains result "should probably be one of"))
+    (doseq [k [:hello1 :hello2 :hello3 :hello4]]
+      (is (.contains result (pr-str k)))))
+  (let [spec (spell/keys :opt-un [::hello1 ::hello2 ::hello3 ::there])
+        data {:there 1 :helloo 1 :barabara 1}
+        result (exp/expound-str spec data)]
+    (is (.contains result "Misspelled map key"))
+    (is (.contains result "should probably be one of"))
+    (is (not (.contains result (pr-str :hello4))))
+    (doseq [k [:hello1 :hello2 :hello3]]
+      (is (.contains result (pr-str k)))))
+  (let [spec (spell/keys :opt-un [::hello ::there])
+        data {:there 1 :helloo 1 :barabara 1}
+        result (exp/expound-str spec data)]
+    (is (.contains result "Misspelled map key"))
+    (is (.contains result "should probably be: :hello\n")))
+  )
 
 ;; checking color
 #_(ansi/with-color

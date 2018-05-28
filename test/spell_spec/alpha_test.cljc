@@ -16,7 +16,7 @@
     (when-let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]} (first problems)]
       (is (= ::spell/misspelled-key type))
       (is (= misspelled-key :helloo))
-      (is (= likely-misspelling-of :hello)))))
+      (is (= '(:hello) likely-misspelling-of)))))
 
 (deftest check-misspell-with-namespace-test
   (let [spec (spell/keys :opt [::hello ::there])
@@ -28,7 +28,7 @@
     (when-let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]} (first problems)]
       (is (= ::spell/misspelled-key type))
       (is (= misspelled-key ::helloo))
-      (is (= likely-misspelling-of ::hello)))))
+      (is (= '(::hello) likely-misspelling-of)))))
 
 (s/def ::hello integer?)
 (s/def ::there integer?)
@@ -94,7 +94,7 @@
       (when-let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]} (first problems)]
         (is (= ::spell/misspelled-key type))
         (is (= misspelled-key :helloo))
-        (is (= likely-misspelling-of :hello)))
+        (is (= '(:hello)  likely-misspelling-of)))
       (when-let [{:keys [:expound.spec.problem/type ::spell/unknown-key]} (second problems)]
         (is (= ::spell/unknown-key type))
         (is (= unknown-key :barabara))))))
@@ -110,3 +110,30 @@
       (binding [*err* (java.io.StringWriter.)]
         (s/valid? spec data)
         (is (= (str *err*) "SPEC WARNING: unknown map key :barabara in {:there 1, :barabara 1}\n"))))))
+
+(deftest multiple-spelling-matches
+  (let [spec (spell/keys :opt-un [::hello1 ::hello2 ::hello3 ::there])
+        data {:there 1 :helloo 1 :barabara 1}
+        {:keys [::s/problems]}
+        (s/explain-data spec data)]
+    (is (not (s/valid? spec data)))
+    (is (= 1 (count problems)))
+    (let [{:keys [:expound.spec.problem/type ::spell/misspelled-key ::spell/likely-misspelling-of]}
+          (first problems)]
+      (is (= ::spell/misspelled-key type))
+      (is (= misspelled-key :helloo))
+      (is (= likely-misspelling-of '(:hello1 :hello2 :hello3))))))
+
+(deftest multiple-spelling-warnings
+  (let [spec (warn-keys :opt-un [::hello ::hello1 ::hello2 ::hello3 ::there])
+        data {:there 1 :helloo 1 :barabara 1}]
+
+    (is (s/valid? spec data))
+    (is (nil? (s/explain-data spec data)))
+
+    (testing "valid prints to *err*"
+      (binding [*err* (java.io.StringWriter.)]
+        (s/valid? spec data)
+        (.flush *err*)
+        (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be one of (:hello :hello1 :hello2) in {:there 1, :helloo 1, :barabara 1}\n"
+               (str *err*)))))))

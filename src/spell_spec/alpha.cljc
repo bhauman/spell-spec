@@ -81,8 +81,8 @@
        (map (juxt #(levenshtein (str %) (str key)) identity))
        (filter first)
        (sort-by first)
-       first
-       second))
+       (map second)
+       not-empty))
 
 ;; ----------------------------------------------------------------------
 ;; Warning only spec
@@ -100,7 +100,9 @@
   (str "possible misspelled map key "
        (pr-str misspelled-key)
        " should probably be "
-       (pr-str likely-misspelling-of)
+       (if (= 1 (count likely-misspelling-of))
+         (pr-str (first likely-misspelling-of))
+         (str "one of " (pr-str (take 3 likely-misspelling-of))))
        " in "
        (binding [*print-level* 1]
          (pr-str value))))
@@ -112,7 +114,7 @@
        (binding [*print-level* 1]
          (pr-str value))))
 
-(defn problem-warnings [value problems]
+(defn- problem-warnings [value problems]
   (#?@(:clj [binding [*out* *err*]]
        :cljs  [do])
    (doseq [prob problems]
@@ -192,6 +194,10 @@
                  (most-similar-to val known-keys))]
     (assoc prob
            :expound.spec.problem/type ::misspelled-key
+           ;; limiting the predicate to the matches
+           ;; makes the default expound errors pretty good
+           ;; but could be confusing in other circumstances
+           :pred (set sim)
            ::misspelled-key val
            ::likely-misspelling-of sim)
     (assoc prob
