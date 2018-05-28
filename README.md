@@ -1,5 +1,9 @@
 # spell-spec
 
+<img src="https://s3.amazonaws.com/bhauman-blog-images/misspelled.png"/>
+
+<img src="https://s3.amazonaws.com/bhauman-blog-images/unknown-key.png"/>
+
 Provides additional spec macros that have the same signature as
 `clojure.spec.alpha/keys` which also verify that unspecified map keys
 are not misspellings of specified map keys. `spell-spec` provides
