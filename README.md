@@ -1,8 +1,8 @@
 # spell-spec
 
 Provides additional spec macros that have the same signature as
-`clojure.spec.alpha/keys` which also check for potential spelling
-errors in the map keys. `spell-spec` provides
+`clojure.spec.alpha/keys` which also verify that unspecified map keys
+are not misspellings of specified map keys. `spell-spec` provides
 [expound](https://github.com/bhb/expound) integration for nicely
 formatted results.
 
