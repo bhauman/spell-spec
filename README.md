@@ -10,6 +10,10 @@ are not misspellings of specified map keys. `spell-spec` provides
 [expound](https://github.com/bhb/expound) integration for nicely
 formatted results.
 
+If you are unfamiliar with
+[Clojure Spec](https://clojure.org/guides/spec) you can learn more
+from the official [guide to Clojure Spec](https://clojure.org/guides/spec).
+
 Example Specs and output:
 
 ```clojure
