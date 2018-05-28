@@ -62,6 +62,8 @@
                       :cljs length->threshold)
                    min-len) ky ky2)))
 
+;; a tricky part is is that a keyword is not considered misspelled
+;; if its substitute is already present in the original map
 (defn likely-misspelled [known-keys]
   (fn [key]
     (and (not (known-keys key))
@@ -196,27 +198,30 @@
            :expound.spec.problem/type ::unknown-key
            ::unknown-key val)))
 
-(defmacro not-misspelled-spec
+#?(:clj
+   (defmacro not-misspelled-spec
   "A spec that verifies that a keyword is not a near misspelling of
   the provided set of keywords. Will produce problems with a
   `:expound.spec.problem/type` of `:spell-spec.alpha/misspelled-key`"
-  [known-keys]
-  (assert (and (set? known-keys)
-               (every? keyword? known-keys))
-          "Must provide a set of keywords.")
-  `(map-explain enhance-problem (s/spec (not-misspelled ~known-keys))))
+     [known-keys]
+     (assert (and (set? known-keys)
+                  (every? keyword? known-keys))
+             "Must provide a set of keywords.")
+     `(map-explain enhance-problem (s/spec (not-misspelled ~known-keys)))))
 
-(defmacro known-keys-spec
+#?(:clj
+   (defmacro known-keys-spec
   "A spec that verifies that a keyword is a member of the provided set
   of keywords. Will produce problems with a
   `:expound.spec.problem/type` of both
   `:spell-spec.alpha/misspelled-key` and
   `:spell-spec.alpha/unknown-key`"
-  [known-keys]
-  (assert (and (set? known-keys)
-               (every? keyword? known-keys))
-          "Must provide a set of keywords.")
-  `(map-explain enhance-problem (s/spec ~known-keys)))
+     [known-keys]
+     (assert (and (set? known-keys)
+                  (every? keyword? known-keys))
+             "Must provide a set of keywords.")
+     `(map-explain enhance-problem (s/spec ~known-keys))))
+
 
 (defn- get-known-keys [{:keys [req opt req-un opt-un]}]
   (let [key-specs    (into (set (filterv keyword? (flatten req))) opt)
@@ -227,7 +232,7 @@
           (mapv #(-> % name keyword) un-key-specs))))
 
 ;; ----------------------------------------------------------------------
-;; CLJS compatability helpers
+;; CLJS compatibility helpers
 ;; ----------------------------------------------------------------------
 
 #?(:clj
@@ -288,7 +293,7 @@
        (s/keys ~@args))))
 
 ;; ----------------------------------------------------------------------
-;; Warning specs
+;; Warning only specs
 ;; ----------------------------------------------------------------------
 
 (defn warn-only-impl
