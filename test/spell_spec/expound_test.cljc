@@ -42,9 +42,9 @@
     (is (.contains result "should be spelled"))
     (is (.contains result " :hello\n"))
 
-    (is (.contains result "Spec failed"))
-    (is (.contains result "should satisfy"))
-    (is (.contains result "integer?"))))
+    (is (not (.contains result "Spec failed")))
+    (is (not (.contains result "should satisfy")))
+    (is (not (.contains result "integer?")))))
 
 (deftest warning-is-valid-test
   (let [spec (warn-keys :opt-un [::hello ::there])

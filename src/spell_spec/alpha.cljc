@@ -82,15 +82,10 @@
        first
        second))
 
-(defn- enhance-spelling-problem [known-keys {:keys [val] :as prob}]
-  (if-let [sim (most-similar-to val known-keys)]
-    (assoc prob
-           :expound.spec.problem/type ::misspelled-key
-           ::misspelled-key val
-           ::likely-misspelling-of sim)
-    (assoc prob
-           :expound.spec.problem/type ::unknown-key
-           ::unknown-key val)))
+;; ----------------------------------------------------------------------
+;; Warning only spec
+;; ----------------------------------------------------------------------
+;; specs that check but only print warnings
 
 (defmulti warning-message* (fn [a _] (:expound.spec.problem/type a)))
 
@@ -115,57 +110,125 @@
        (binding [*print-level* 1]
          (pr-str value))))
 
-(defn- handle-warnings [known-keys x problems]
+(defn problem-warnings [value problems]
   (#?@(:clj [binding [*out* *err*]]
        :cljs  [do])
-    (doseq [prob (keep (partial enhance-spelling-problem known-keys) problems)]
-      (*warning-handler*
-       (assoc prob
-              ::value x
-              ::warning-message
-              (warning-message* prob x))))))
+   (doseq [prob problems]
+     (*warning-handler*
+      (assoc prob
+             ::value value
+             ::warning-message (warning-message* prob value))))))
 
-(defn fuzzy-mapkeys-impl [known-keys keys-spec misspelled-keys]
-  {:pre [(set? known-keys)]}
+(defn warning-spec
+  "Wraps a spec and will behave just like the wrapped spec but if
+  `spell-spec.alpha/*warn-only*` is bound to `true` around spec
+  validation calls, this will print warnings instead of failing the
+  validation.
+
+  Bind the `spell-spec.alpha/*warning-handler*` if you want to handle
+  the emmitted warnings."
+  [wspec]
   (reify
     s/Specize
      (specize* [s] s)
      (specize* [s _] s)
     s/Spec
-    (conform* [self x]
+    (conform* [_ x]
       (binding [*value* x]
-        (let [result (s/conform* keys-spec x)]
-          (if (and (not= ::s/invalid result)
-                   (s/valid? misspelled-keys x))
+        (let [result (s/conform* wspec x)]
+          (if (not= ::s/invalid result)
             result
-            (if (and *warn-only* (not (s/valid? misspelled-keys x)))
-              (do
-                (handle-warnings known-keys x (::s/problems (s/explain-data misspelled-keys x)))
-                result)
+            (if *warn-only*
+              (do (problem-warnings x (::s/problems (s/explain-data wspec x)))
+                  x)
               ::s/invalid)))))
-    (unform* [_ x] (s/unform* keys-spec x))
+    (unform* [_ x] (s/unform* wspec x))
     (explain* [_ path via in x]
       (binding [*value* x]
-        (not-empty
-         (vec
-          (concat
-           (s/explain* keys-spec path via in x)
-           (if *warn-only*
-             (handle-warnings known-keys x (s/explain* misspelled-keys path via in x))
-             (keep
-              (partial enhance-spelling-problem known-keys)
-              (s/explain* misspelled-keys path via in x))))))))
+        (when-let [problems (not-empty (s/explain* wspec path via in x))]
+          (if *warn-only*
+            (problem-warnings x problems)
+            problems))))
     (gen* [_ a b c]
-      (s/gen* keys-spec a b c))
+      (s/gen* wspec a b c))
     (with-gen* [_ gfn]
-      (s/with-gen* keys-spec gfn))
-    (describe* [_] (cons 'not-misspelled-keys (rest (s/describe* keys-spec))))))
+      (s/with-gen* wspec gfn))
+    (describe* [_] (s/describe wspec))))
 
-(defn get-known-keys [{:keys [req opt req-un opt-un]}]
-  (let [spec-specs  (into (set req) opt)
-        un-specs    (into (set req-un) opt-un)]
-    (into spec-specs
-          (mapv #(-> % name keyword) un-specs))))
+;; ----------------------------------------------------------------------
+;; Misspelled and Unknown-keys
+;; ----------------------------------------------------------------------
+
+(defn map-explain
+  "A spec wrapper that takes a function and a spec, and returns a spec
+  that will map a function over the spec problems emmitted by the call
+  to `clojure.spec.alpha/explain*` on that spec.
+
+  Useful for enhancing the spec problems with extra data."
+  [f aspec]
+  (reify
+    s/Specize
+    (specize* [s] s)
+    (specize* [s _] s)
+    s/Spec
+    (conform* [_ x] (s/conform* aspec x))
+    (unform* [_ x] (s/unform* aspec x))
+    (explain* [_ path via in x]
+      (not-empty (map f (s/explain* aspec path via in x))))
+    (gen* [_ a b c]
+      (s/gen* aspec a b c))
+    (with-gen* [_ gfn]
+      (s/with-gen* aspec gfn))
+    (describe* [_] (s/describe aspec))))
+
+(defn enhance-problem [{:keys [pred val] :as prob}]
+  (if-let [sim (when-let [known-keys (cond
+                                       (set? pred) pred
+                                       (= 'spell-spec.alpha/not-misspelled (first pred))
+                                       (second pred)
+                                       :else nil)]
+                 (most-similar-to val known-keys))]
+    (assoc prob
+           :expound.spec.problem/type ::misspelled-key
+           ::misspelled-key val
+           ::likely-misspelling-of sim)
+    (assoc prob
+           :expound.spec.problem/type ::unknown-key
+           ::unknown-key val)))
+
+(defmacro not-misspelled-spec
+  "A spec that verifies that a keyword is not a near misspelling of
+  the provided set of keywords. Will produce problems with a
+  `:expound.spec.problem/type` of `:spell-spec.alpha/misspelled-key`"
+  [known-keys]
+  (assert (and (set? known-keys)
+               (every? keyword? known-keys))
+          "Must provide a set of keywords.")
+  `(map-explain enhance-problem (s/spec (not-misspelled ~known-keys))))
+
+(defmacro known-keys-spec
+  "A spec that verifies that a keyword is a member of the provided set
+  of keywords. Will produce problems with a
+  `:expound.spec.problem/type` of both
+  `:spell-spec.alpha/misspelled-key` and
+  `:spell-spec.alpha/unknown-key`"
+  [known-keys]
+  (assert (and (set? known-keys)
+               (every? keyword? known-keys))
+          "Must provide a set of keywords.")
+  `(map-explain enhance-problem (s/spec ~known-keys)))
+
+(defn- get-known-keys [{:keys [req opt req-un opt-un]}]
+  (let [key-specs    (into (set (filterv keyword? (flatten req))) opt)
+        un-key-specs (into (set (filterv keyword? (flatten req-un))) opt-un)]
+    (assert (every? #(and (keyword? %) (namespace %)) (concat key-specs un-key-specs))
+            "all keys must be namespace-qualified keywords")
+    (into key-specs
+          (mapv #(-> % name keyword) un-key-specs))))
+
+;; ----------------------------------------------------------------------
+;; CLJS compatability helpers
+;; ----------------------------------------------------------------------
 
 #?(:clj
    (defn in-cljs-compile? []
@@ -178,8 +241,11 @@
       (if (in-cljs-compile?)
        "cljs.spec.alpha"
        "clojure.spec.alpha")
-      (name var-sym)))
-   )
+      (name var-sym))))
+
+;; ----------------------------------------------------------------------
+;; Main API specs
+;; ----------------------------------------------------------------------
 
 #?(:clj
    (defmacro keys
@@ -200,15 +266,34 @@
   to maps that flow through functions. spell-spec.alpha/keys keeps
   this in mind and is fairly conservative in its spelling checks."
      [& args]
-     ;; macroexpanding here to check args before using them later
-     (let [form (macroexpand `(~(spec-ns-var 'keys) ~@args))
-           known-keys (get-known-keys args)]
-       `(spell-spec.alpha/fuzzy-mapkeys-impl
-         ~known-keys
-         ~form
-         (~(spec-ns-var 'map-of) (spell-spec.alpha/not-misspelled ~known-keys) any?)))))
+     `(s/and
+       (warning-spec (s/map-of (not-misspelled-spec ~(get-known-keys args)) any?))
+       (s/keys ~@args))))
 
-(defn warn-only-impl [spec]
+#?(:clj
+   (defmacro strict-keys
+     "`strict-keys` is very similar to `spell-spec.alpha/keys` except
+  that the map is closed to keys that are not specified.
+
+  `strict-keys` will produce two types of validation problems: one for
+  misspelled keys and one for unknown keys.
+
+  This spec macro violates the Clojure idiom of keeping maps open. However,
+  there are some situations where this behavior is warranted. I
+  strongly advocate for the use of `spell-spec.alpha/keys` over
+  `strict-keys`"
+     [& args]
+     `(s/and
+       (warning-spec (s/map-of (known-keys-spec ~(get-known-keys args)) any?))
+       (s/keys ~@args))))
+
+;; ----------------------------------------------------------------------
+;; Warning specs
+;; ----------------------------------------------------------------------
+
+(defn warn-only-impl
+  "A spec wrapper that forces warn only behavior."
+  [spec]
   (reify
     s/Specize
      (specize* [s] (s/specize* spec))
@@ -231,33 +316,6 @@
   it will print warnings instead of failing when misspelled keys are discovered."
      [& args]
      `(spell-spec.alpha/warn-only-impl (spell-spec.alpha/keys ~@args))))
-
-;; ----------------------------------------------------------------------
-;; Strict keys
-;; ----------------------------------------------------------------------
-;; Strict keys fails on missing keys
-
-#?(:clj
-   (defmacro strict-keys
-     "`strict-keys` is very similar to `spell-spec.alpha/keys` except
-  that the map is closed to keys that are not specified.
-
-  `strict-keys` will produce two types of validation problems: one for
-  misspelled keys and one for unknown keys.
-
-  This spec macro violates the Clojure idiom of keeping maps open. However,
-  there are some situations where this behavior is warranted. I
-  strongly advocate for the use of `spell-spec.alpha/keys` over
-  `strict-keys`"
-     [& args]
-     ;; macroexpanding here to check args before using them later
-     (let [form (macroexpand `(~(spec-ns-var 'keys) ~@args))
-           known-keys (spell-spec.alpha/get-known-keys args)]
-       `(spell-spec.alpha/fuzzy-mapkeys-impl
-         ~known-keys
-         ~form
-         (~(spec-ns-var 'map-of)
-          ~known-keys any?)))))
 
 #?(:clj
    (defmacro warn-strict-keys

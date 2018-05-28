@@ -33,30 +33,32 @@
 (s/def ::hello integer?)
 (s/def ::there integer?)
 
-(deftest other-errors-come-first
+(deftest misspelled-errors-come-first
   (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there "1" :helloo 1 :barabara 1}
         {:keys [::s/problems]} (s/explain-data spec data)]
     (is (not (s/valid? spec data)))
-    (is (= 2 (count problems)))
-    (when (= 2 (count problems))
-      (is (= (-> problems first :val) "1"))
-      (is (= (-> problems second ::spell/misspelled-key) :helloo)))))
+    (is (= 1 (count problems)))
+    (when (= 1 (count problems))
+      (is (= (-> problems first ::spell/misspelled-key) :helloo)))))
 
 (deftest warning-is-valid-test
   (let [spec (warn-keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :barabara 1}]
+
     (is (s/valid? spec data))
     (is (nil? (s/explain-data spec data)))
 
     (testing "valid prints to *err*"
       (binding [*err* (java.io.StringWriter.)]
         (s/valid? spec data)
-        (is (= (str *err*) "SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1, :barabara 1}\n"))))
+        (.flush *err*)
+        (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1, :barabara 1}\n"
+               (str *err*)))))
 
     (testing "other errors still show up"
-      (is (not (s/valid? spec {:there "1" :helloo 1})))
-      (let [{:keys [::s/problems]} (s/explain-data spec {:there "1" :helloo 1})]
+      (is (not (s/valid? spec {:there "1" :hello 1})))
+      (let [{:keys [::s/problems]} (s/explain-data spec {:there "1" :hello 1})]
         (is (= 1 (count problems)))
         (is (= "1" (-> problems first :val)))))))
 
