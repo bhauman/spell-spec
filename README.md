@@ -131,7 +131,7 @@ automatically register its expound helpers.
 
 If you want to use the `spell-spec`
 [expound](https://github.com/bhb/expound) integration, then after
-`expound` has been required you will need to require
+`expound.alpha` has been required you will need to require
 `spell-spec.expound` to register the expound helpers. You will want to
 do this before you validate any `spell-spec` defined specs.
 
