@@ -165,7 +165,8 @@
 
 #?(:clj
    (defn in-cljs-compile? []
-     (when-let [v (resolve 'cljs.env/*compiler*)]
+     ;; use a variable that isn't commonly bound when reloading clojure files
+     (when-let [v (resolve 'cljs.analyzer/*cljs-static-fns*)]
        (thread-bound? v))))
 
 #?(:clj
