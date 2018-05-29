@@ -116,7 +116,7 @@ Add `spell-spec` as a dependency in your project config.
 For **leiningen** in your `project.clj` `:dependencies` add:
 
 ```clojure
-:dependencies [[spell-spec "0.1.0"]
+:dependencies [[com.bhauman/spell-spec "0.1.0"]
                ;; if you want to use expound
                [expound "0.7.0"]]
 ```
@@ -124,7 +124,7 @@ For **leiningen** in your `project.clj` `:dependencies` add:
 For **clojure cli tools** in your `deps.edn` `:deps` key add:
 
 ```clojure
-{:deps {spell-spec {:mvn/version "0.1.0"}
+{:deps {com.bhauman/spell-spec {:mvn/version "0.1.0"}
         ;; if you want to use expound
         expound {:mvn/version "0.7.0"}}}
 ```
