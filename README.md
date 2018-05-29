@@ -1,8 +1,8 @@
 # spell-spec
 
-<img src="https://s3.amazonaws.com/bhauman-blog-images/misspelled.png"/>
+<img src="https://s3.amazonaws.com/bhauman-blog-images/misspelled-key-error.png"/>
 
-<img src="https://s3.amazonaws.com/bhauman-blog-images/unknown-key.png"/>
+<img src="https://s3.amazonaws.com/bhauman-blog-images/unknown-key-error.png"/>
 
 `spell-spec` is a Clojure/Script library that provides additional spec
 macros that have the same signature as `clojure.spec.alpha/keys`
