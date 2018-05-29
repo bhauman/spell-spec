@@ -87,7 +87,7 @@ any external API where users are repeatedly stung by single character
 mishaps. `spell-spec` can provide valuable feedback for these
 situations.
 
-The behavior in the library is an evolution of the library
+This library is an evolution of the library
 [strictly-specking](https://github.com/bhauman/strictly-specking),
 which I wrote to validate the complex configuration of
 [figwheel](https://github.com/bhauman/lein-figwheel).
@@ -100,9 +100,9 @@ feedback for configuration errors. As a result the code in
 of configuration specification for a tool like
 [figwheel](https://github.com/bhauman/lein-figwheel).
 
-`spell-spec` is a **good enough** approach which will provide good
-feedback for a much broader set of use cases. I am planning on using
-this approach instead of
+When used with expound, `spell-spec` is a **good enough** approach
+which will provide good feedback for a much broader set of use
+cases. I am planning on using this approach instead of
 [strictly-specking](https://github.com/bhauman/strictly-specking) from
 now on.
 
