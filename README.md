@@ -5,7 +5,7 @@
 <img src="https://s3.amazonaws.com/bhauman-blog-images/unknown-key.png"/>
 
 `spell-spec` is a Clojure/Script library that provides additional spec
-macros that have the same signatures as `clojure.spec.alpha/keys`
+macros that have the same signature as `clojure.spec.alpha/keys`
 macro. `spell-spec` macros will also verify that unspecified map keys are
 not misspellings of specified map keys. `spell-spec` also provides
 [expound](https://github.com/bhb/expound) integration for nicely
