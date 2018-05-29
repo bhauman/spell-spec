@@ -4,7 +4,14 @@
             [#?(:clj  clojure.spec.alpha
                 :cljs cljs.spec.alpha)
              :as s]
+            [clojure.string :as string]
             [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]))
+
+(defn fetch-warning-output [thunk]
+  #?(:clj (binding [*err* (java.io.StringWriter.)]
+            (thunk)
+            (str *err*))
+     :cljs (with-out-str (thunk))))
 
 (deftest check-misspell-test
   (let [spec (spell/keys :opt-un [::hello ::there])
@@ -50,11 +57,8 @@
     (is (nil? (s/explain-data spec data)))
 
     (testing "valid prints to *err*"
-      (binding [*err* (java.io.StringWriter.)]
-        (s/valid? spec data)
-        (.flush *err*)
-        (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1, :barabara 1}\n"
-               (str *err*)))))
+      (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1, :barabara 1}\n"
+             (fetch-warning-output #(s/valid? spec data)))))
 
     (testing "other errors still show up"
       (is (not (s/valid? spec {:there "1" :hello 1})))
@@ -68,9 +72,7 @@
     (is (s/valid? spec data))
     (is (nil? (s/explain-data spec data)))
     (testing "should not warn if key present in value already"
-      (binding [*err* (java.io.StringWriter.)]
-        (s/valid? spec data)
-        (is (= (str *err*) ""))))))
+      (is (string/blank? (fetch-warning-output #(s/valid? spec data)))))))
 
 (deftest strict-keys-test
   (let [spec (strict-keys :opt-un [::hello ::there])
@@ -107,9 +109,8 @@
     (is (s/valid? spec data))
     (is (nil? (s/explain-data spec data)))
     (testing "should warn if unknown-key"
-      (binding [*err* (java.io.StringWriter.)]
-        (s/valid? spec data)
-        (is (= (str *err*) "SPEC WARNING: unknown map key :barabara in {:there 1, :barabara 1}\n"))))))
+      (is (= "SPEC WARNING: unknown map key :barabara in {:there 1, :barabara 1}\n"
+             (fetch-warning-output #(s/valid? spec data)))))))
 
 (deftest multiple-spelling-matches
   (let [spec (spell/keys :opt-un [::hello1 ::hello2 ::hello3 ::there])
@@ -132,8 +133,5 @@
     (is (nil? (s/explain-data spec data)))
 
     (testing "valid prints to *err*"
-      (binding [*err* (java.io.StringWriter.)]
-        (s/valid? spec data)
-        (.flush *err*)
-        (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be one of (:hello :hello1 :hello2) in {:there 1, :helloo 1, :barabara 1}\n"
-               (str *err*)))))))
+      (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be one of (:hello :hello1 :hello2) in {:there 1, :helloo 1, :barabara 1}\n"
+             (fetch-warning-output #(s/valid? spec data)))))))

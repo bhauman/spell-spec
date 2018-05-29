@@ -160,6 +160,23 @@
     (describe* [_] (s/describe wspec))))
 
 ;; ----------------------------------------------------------------------
+;; CLJS compatibility helpers
+;; ----------------------------------------------------------------------
+
+#?(:clj
+   (defn in-cljs-compile? []
+     (when-let [v (resolve 'cljs.env/*compiler*)]
+       (thread-bound? v))))
+
+#?(:clj
+   (defn spec-ns-var [var-sym]
+     (symbol
+      (if (in-cljs-compile?)
+       "cljs.spec.alpha"
+       "clojure.spec.alpha")
+      (name var-sym))))
+
+;; ----------------------------------------------------------------------
 ;; Misspelled and Unknown-keys
 ;; ----------------------------------------------------------------------
 
@@ -213,7 +230,7 @@
      (assert (and (set? known-keys)
                   (every? keyword? known-keys))
              "Must provide a set of keywords.")
-     `(map-explain enhance-problem (s/spec (not-misspelled ~known-keys)))))
+     `(map-explain enhance-problem (~(spec-ns-var 'spec) (not-misspelled ~known-keys)))))
 
 #?(:clj
    (defmacro known-keys-spec
@@ -226,7 +243,7 @@
      (assert (and (set? known-keys)
                   (every? keyword? known-keys))
              "Must provide a set of keywords.")
-     `(map-explain enhance-problem (s/spec ~known-keys))))
+     `(map-explain enhance-problem (~(spec-ns-var 'spec) ~known-keys))))
 
 
 (defn- get-known-keys [{:keys [req opt req-un opt-un]}]
@@ -236,23 +253,6 @@
             "all keys must be namespace-qualified keywords")
     (into key-specs
           (mapv #(-> % name keyword) un-key-specs))))
-
-;; ----------------------------------------------------------------------
-;; CLJS compatibility helpers
-;; ----------------------------------------------------------------------
-
-#?(:clj
-   (defn in-cljs-compile? []
-     (when-let [v (resolve 'cljs.env/*compiler*)]
-       (thread-bound? v))))
-
-#?(:clj
-   (defn spec-ns-var [var-sym]
-     (symbol
-      (if (in-cljs-compile?)
-       "cljs.spec.alpha"
-       "clojure.spec.alpha")
-      (name var-sym))))
 
 ;; ----------------------------------------------------------------------
 ;; Main API specs
@@ -277,9 +277,10 @@
   to maps that flow through functions. spell-spec.alpha/keys keeps
   this in mind and is fairly conservative in its spelling checks."
      [& args]
-     `(s/and
-       (warning-spec (s/map-of (not-misspelled-spec ~(get-known-keys args)) any?))
-       (s/keys ~@args))))
+     `(~(spec-ns-var 'and)
+       (warning-spec (~(spec-ns-var 'map-of)
+                      (not-misspelled-spec ~(get-known-keys args)) any?))
+       (~(spec-ns-var 'keys) ~@args))))
 
 #?(:clj
    (defmacro strict-keys
@@ -294,9 +295,10 @@
   strongly advocate for the use of `spell-spec.alpha/keys` over
   `strict-keys`"
      [& args]
-     `(s/and
-       (warning-spec (s/map-of (known-keys-spec ~(get-known-keys args)) any?))
-       (s/keys ~@args))))
+     `(~(spec-ns-var 'and)
+       (warning-spec (~(spec-ns-var 'map-of)
+                      (known-keys-spec ~(get-known-keys args)) any?))
+       (~(spec-ns-var 'keys) ~@args))))
 
 ;; ----------------------------------------------------------------------
 ;; Warning only specs

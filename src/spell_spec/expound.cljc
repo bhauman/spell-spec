@@ -32,6 +32,3 @@
 
 (defmethod exp/expected-str :spell-spec.alpha/unknown-key [_type spec-name val path problems opts]
   (str "should be" (format-correction-list (-> problems first :pred))))
-
-
-

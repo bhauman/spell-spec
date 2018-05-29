@@ -4,27 +4,34 @@
             [#?(:clj clojure.spec.alpha
                 :cljs cljs.spec.alpha)
              :as s]
+            [clojure.string :as string]
             [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]
             [expound.alpha :as exp]
             [expound.ansi :as ansi]
             [spell-spec.expound]))
+
+(defn fetch-warning-output [thunk]
+  #?(:clj (binding [*err* (java.io.StringWriter.)]
+            (thunk)
+            (str *err*))
+     :cljs (with-out-str (thunk))))
 
 (deftest check-misspell-test
   (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :barabara 1}
         result
         (exp/expound-str spec data)]
-    (is (.contains result "Misspelled map key"))
-    (is (.contains result "should probably be"))
-    (is (.contains result " :hello\n"))))
+    (is (string/includes? result "Misspelled map key"))
+    (is (string/includes? result "should probably be"))
+    (is (string/includes? result " :hello\n"))))
 
 (deftest check-misspell-with-namespace-test
   (let [spec (spell/keys :opt [::hello ::there])
         data {::there 1 ::helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
-    (is (.contains result "Misspelled map key"))
-    (is (.contains result "should probably be"))
-    (is (.contains result ":spell-spec.expound-test/hello\n"))))
+    (is (string/includes? result "Misspelled map key"))
+    (is (string/includes? result "should probably be"))
+    (is (string/includes? result ":spell-spec.expound-test/hello\n"))))
 
 (s/def ::hello integer?)
 (s/def ::there integer?)
@@ -33,61 +40,57 @@
   (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there "1" :helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
-    (is (.contains result "Misspelled map key"))
-    (is (.contains result "should probably be"))
-    (is (.contains result " :hello\n"))
+    (is (string/includes? result "Misspelled map key"))
+    (is (string/includes? result "should probably be"))
+    (is (string/includes? result " :hello\n"))
 
-    (is (not (.contains result "Spec failed")))
-    (is (not (.contains result "should satisfy")))
-    (is (not (.contains result "integer?")))))
+    (is (not (string/includes? result "Spec failed")))
+    (is (not (string/includes? result "should satisfy")))
+    (is (not (string/includes? result "integer?")))))
 
 (deftest warning-is-valid-test
   (let [spec (warn-keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :barabara 1}]
     (testing "expound prints warning to *err*"
-      (binding [*err* (java.io.StringWriter.)]
-        (exp/expound-str spec data)
-        (is (= (str *err*)
-               "SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1, :barabara 1}\n"))))))
+      (is (= (fetch-warning-output #(exp/expound-str spec data))
+             "SPEC WARNING: possible misspelled map key :helloo should probably be :hello in {:there 1, :helloo 1, :barabara 1}\n")))))
 
 (deftest strict-keys-test
   (let [spec (strict-keys :opt-un [::hello ::there])
         data {:there 1 :barabara 1}
         result (exp/expound-str spec data)]
-    (is (.contains result "Unknown map key"))
-    (is (.contains result "should be one of"))
-    (is (.contains result " :hello, :there\n"))))
+    (is (string/includes? result "Unknown map key"))
+    (is (string/includes? result "should be one of"))
+    (is (string/includes? result " :hello, :there\n"))))
 
 (deftest  warn-on-unknown-keys-test
   (let [spec (warn-strict-keys :opt-un [::hello ::there])
         data {:there 1 :barabara 1}]
     (testing "expound prints warning to *err*"
-      (binding [*err* (java.io.StringWriter.)]
-        (exp/expound-str spec data)
-        (is (= (str *err*)
-               "SPEC WARNING: unknown map key :barabara in {:there 1, :barabara 1}\n"))))))
+      (is (= (fetch-warning-output #(exp/expound-str spec data))
+             "SPEC WARNING: unknown map key :barabara in {:there 1, :barabara 1}\n")))))
 
 (deftest multiple-spelling-matches
   (let [spec (spell/keys :opt-un [::hello1 ::hello2 ::hello3 ::hello4 ::there])
         data {:there 1 :helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
-    (is (.contains result "Misspelled map key"))
-    (is (.contains result "should probably be one of"))
+    (is (string/includes? result "Misspelled map key"))
+    (is (string/includes? result "should probably be one of"))
     (doseq [k [:hello1 :hello2 :hello3 :hello4]]
-      (is (.contains result (pr-str k)))))
+      (is (string/includes? result (pr-str k)))))
   (let [spec (spell/keys :opt-un [::hello1 ::hello2 ::hello3 ::there])
         data {:there 1 :helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
-    (is (.contains result "Misspelled map key"))
-    (is (.contains result "should probably be one of"))
-    (is (not (.contains result (pr-str :hello4))))
+    (is (string/includes? result "Misspelled map key"))
+    (is (string/includes? result "should probably be one of"))
+    (is (not (string/includes? result (pr-str :hello4))))
     (doseq [k [:hello1 :hello2 :hello3]]
-      (is (.contains result (pr-str k)))))
+      (is (string/includes? result (pr-str k)))))
   (let [spec (spell/keys :opt-un [::hello ::there])
         data {:there 1 :helloo 1 :barabara 1}
         result (exp/expound-str spec data)]
-    (is (.contains result "Misspelled map key"))
-    (is (.contains result "should probably be: :hello\n")))
+    (is (string/includes? result "Misspelled map key"))
+    (is (string/includes? result "should probably be: :hello\n")))
   )
 
 ;; checking color
