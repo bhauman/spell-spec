@@ -1,4 +1,4 @@
-(defproject com.bhauman/spell-spec "0.1.0"
+(defproject com.bhauman/spell-spec "0.1.1-SNAPSHOT"
   :description "Clojure Spec macros which verify that unspecified map keys are not misspellings of specified map keys."
   :url "https://github.com/bhauman/spell-spec"
   :license {:name "Eclipse Public License"
