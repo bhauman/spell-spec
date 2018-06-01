@@ -66,13 +66,13 @@
 ;; if its substitute is already present in the original map
 (defn likely-misspelled [known-keys]
   (fn [key]
-    (and (not (known-keys key))
-         (->> known-keys
-              (filter #(similar-key % key))
-              (remove (set (#?(:clj clojure.core/keys
-                               :cljs cljs.core/keys)
-                            *value*)))
-              not-empty))))
+    (when-not (known-keys key)
+      (->> known-keys
+           (filter #(similar-key % key))
+           (remove (set (#?(:clj clojure.core/keys
+                            :cljs cljs.core/keys)
+                         *value*)))
+           not-empty))))
 
 (defn not-misspelled [known-keys] (complement (likely-misspelled known-keys)))
 
