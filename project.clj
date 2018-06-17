@@ -11,7 +11,8 @@
   :clean-targets ^{:protect false} ["target"]
 
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.10.238"]
-                                  [com.bhauman/figwheel-main "0.1.0-SNAPSHOT"]
+                                  [org.clojure/test.check "0.9.0"]
+                                  [com.bhauman/figwheel-main "0.1.2"]
                                   [expound "0.7.0"]]
                    :source-paths ["src" "example"]
                    :resource-paths ["target"]}}

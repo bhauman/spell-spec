@@ -1,11 +1,14 @@
 (ns spell-spec.alpha-test
-  (:require [#?(:clj clojure.test :cljs cljs.test)
-             :refer [deftest is testing]]
-            [#?(:clj  clojure.spec.alpha
-                :cljs cljs.spec.alpha)
-             :as s]
-            [clojure.string :as string]
-            [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]))
+  (:require
+   [clojure.test.check]
+   [clojure.test.check.generators :as gen]
+   [#?(:clj clojure.test :cljs cljs.test)
+    :refer [deftest is testing]]
+   [#?(:clj  clojure.spec.alpha
+       :cljs cljs.spec.alpha)
+    :as s]
+   [clojure.string :as string]
+   [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]))
 
 (defn fetch-warning-output [thunk]
   #?(:clj (binding [*err* (java.io.StringWriter.)]
@@ -135,3 +138,17 @@
     (testing "valid prints to *err*"
       (is (= "SPEC WARNING: possible misspelled map key :helloo should probably be one of (:hello :hello1 :hello2) in {:there 1, :helloo 1, :barabara 1}\n"
              (fetch-warning-output #(s/valid? spec data)))))))
+
+
+(s/def ::baz string?)
+
+;; just a smoke test to ensure generation works
+(deftest generators-test
+  (let [generates? (fn [spec]
+                     (when-let [res (not-empty (gen/sample (s/gen spec)))]
+                       (every? #(-> % :baz string?) res)))]
+    (is (generates? (spell/keys :req-un [::baz])))
+    (is (generates? (spell/strict-keys :req-un [::baz])))
+
+    (is (generates? (spell/warn-keys :req-un [::baz])))
+    (is (generates? (spell/warn-strict-keys :req-un [::baz])))))

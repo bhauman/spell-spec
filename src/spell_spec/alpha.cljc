@@ -255,6 +255,33 @@
     (into key-specs
           (mapv #(-> % name keyword) un-key-specs))))
 
+(defn pre-check
+  "Similar to `clojure.spec.alpha/and` but treats the all the specs
+  except the last one as pre-conditions for validity purposes but behaves
+  like a proxy to the last spec provided for everything else."
+  [& specs]
+  (let [pre (butlast specs)
+        spec (last specs)]
+    (reify
+      s/Specize
+      (specize* [s] s)
+      (specize* [s _] s)
+      s/Spec
+      (conform* [_ x]
+        (if (every? #(s/valid? % x) pre)
+          (s/conform* spec x)
+          ::s/invalid))
+      (unform* [_ x] (s/unform* spec x))
+      (explain* [_ path via in x]
+        (if-let [problems (some #(s/explain* % path via in x) pre)]
+          problems
+          (s/explain* spec path via in x)))
+      (gen* [_ a b c]
+        (s/gen* spec a b c))
+      (with-gen* [_ gfn]
+        (s/with-gen* spec gfn))
+      (describe* [_] (s/describe spec)))))
+
 ;; ----------------------------------------------------------------------
 ;; Main API specs
 ;; ----------------------------------------------------------------------
@@ -278,7 +305,7 @@
   to maps that flow through functions. spell-spec.alpha/keys keeps
   this in mind and is fairly conservative in its spelling checks."
      [& args]
-     `(~(spec-ns-var 'and)
+     `(pre-check
        (warning-spec (~(spec-ns-var 'map-of)
                       (not-misspelled-spec ~(get-known-keys args)) any?))
        (~(spec-ns-var 'keys) ~@args))))
@@ -296,7 +323,7 @@
   strongly advocate for the use of `spell-spec.alpha/keys` over
   `strict-keys`"
      [& args]
-     `(~(spec-ns-var 'and)
+     `(pre-check ;~(spec-ns-var 'and)
        (warning-spec (~(spec-ns-var 'map-of)
                       (known-keys-spec ~(get-known-keys args)) any?))
        (~(spec-ns-var 'keys) ~@args))))
