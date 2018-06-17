@@ -1,5 +1,7 @@
 # spell-spec
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.bhauman/spell-spec.svg)](https://clojars.org/com.bhauman/spell-spec)
+
 <img src="https://s3.amazonaws.com/bhauman-blog-images/misspelled-key-error.png"/>
 
 <img src="https://s3.amazonaws.com/bhauman-blog-images/unknown-key-error.png"/>
