@@ -13,6 +13,7 @@
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.10.238"]
                                   [org.clojure/test.check "0.9.0"]
                                   [com.bhauman/figwheel-main "0.1.2"]
+                                  [com.bhauman/cljs-test-display "0.1.0"]
                                   [expound "0.7.0"]]
                    :source-paths ["src" "example"]
                    :resource-paths ["target"]}}
