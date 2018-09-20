@@ -20,7 +20,7 @@ from the official [guide to Clojure Spec](https://clojure.org/guides/spec).
 Example Specs and output:
 
 ```clojure
-(explain 
+(s/explain 
   (spell-spec.alpha/keys :opt-un [::hello ::there]) 
   {:there 1 :helloo 1})
 ;; In: [:helloo 0] val: :helloo fails at: [0] predicate: (not-misspelled #{:hello :there})
@@ -32,7 +32,7 @@ Example Specs and output:
 Designed to work well with [expound](https://github.com/bhb/expound):
 
 ```clojure
-(expound 
+(expound/expound 
   (spell-spec.alpha/keys :opt-un [::hello ::there]) 
   {:there 1 :helloo 1})
 ;; -- Misspelled map key -------------
