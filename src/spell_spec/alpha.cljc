@@ -57,7 +57,7 @@
       dist)))
 
 (defn- similar-key [ky ky2]
-  (let [min-len (apply min (map (comp count #(if (.startsWith % ":") (subs % 1) %) str) [ky ky2]))]
+  (let [min-len (apply min (map (comp count #(if (.startsWith ^String % ":") (subs % 1) %) str) [ky ky2]))]
     (similar-key* (#?(:clj *length->threshold*
                       :cljs length->threshold)
                    min-len) ky ky2)))
