@@ -58,7 +58,7 @@
       dist)))
 
 (defn- string-starts-with? [a b]
-  #?(:clj (.startsWith a b)
+  #?(:clj (.startsWith ^String a b)
      :cljs (goog.string/startsWith a b)))
 
 (defn- similar-key [ky ky2]
