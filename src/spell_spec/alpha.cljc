@@ -162,7 +162,7 @@
       (s/gen* wspec a b c))
     (with-gen* [_ gfn]
       (s/with-gen* wspec gfn))
-    (describe* [_] (s/describe wspec))))
+    (describe* [_] (s/describe* wspec))))
 
 ;; ----------------------------------------------------------------------
 ;; CLJS compatibility helpers
