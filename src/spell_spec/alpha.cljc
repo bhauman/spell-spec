@@ -57,9 +57,12 @@
     (when (<= dist thresh)
       dist)))
 
+(defn- string-starts-with? [a b]
+  #?(:clj (.startsWith a b)
+     :cljs (goog.string/startsWith a b)))
+
 (defn- similar-key [ky ky2]
-  (let [starts-with? #?(:clj (fn [a b] (.startsWith a b)) :cljs (fn [a b] (goog.string/startsWith a b)))
-        min-len      (apply min (map (comp count #(if (starts-with? % ":") (subs % 1) %) str) [ky ky2]))]
+  (let [min-len (apply min (map (comp count #(if (string-starts-with? % ":") (subs % 1) %) str) [ky ky2]))]
     (similar-key* (#?(:clj *length->threshold*
                       :cljs length->threshold)
                    min-len) ky ky2)))
