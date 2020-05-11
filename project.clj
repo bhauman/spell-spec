@@ -1,4 +1,4 @@
-(defproject com.bhauman/spell-spec "0.1.2-SNAPSHOT"
+(defproject com.bhauman/spell-spec "0.1.2"
   :description "Clojure Spec macros which verify that unspecified map keys are not misspellings of specified map keys."
   :url "https://github.com/bhauman/spell-spec"
   :license {:name "Eclipse Public License"
@@ -12,9 +12,9 @@
 
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.10.238"]
                                   [org.clojure/test.check "0.9.0"]
-                                  [com.bhauman/figwheel-main "0.1.2"]
+                                  [com.bhauman/figwheel-main "0.2.5-SNAPSHOT"]
                                   [com.bhauman/cljs-test-display "0.1.0"]
-                                  [expound "0.7.0"]]
+                                  [expound "0.8.4"]]
                    :source-paths ["src" "example"]
                    :resource-paths ["target"]}}
 
